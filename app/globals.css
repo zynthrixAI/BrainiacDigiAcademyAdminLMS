@@ -1,26 +1,89 @@
 @import "tailwindcss";
 
+/* BDA Admin design tokens (from the Admin Portal design system) */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg: #f5f5f4;
+  --bg-elev: #ffffff;
+  --ink: #1c1b1b;
+  --ink-2: #2a2926;
+  --muted: #6b7280;
+  --muted-2: #9ca3af;
+  --line: #ecebe7;
+  --line-2: #e5e7eb;
+  --yellow: #f9c323;
+  --yellow-soft: #fef6dd;
+  --yellow-ink: #4f4633;
+  --green: #1f8a5b;
+  --red: #e23b3b;
+  --sidebar-bg: #0f0e0e;
+  --sidebar-muted: #8c8a86;
+  --radius: 14px;
 }
 
+/* Expose tokens as Tailwind theme values so utilities like `bg-yellow`,
+   `text-ink`, `border-line`, `font-display` resolve to the design tokens.
+   `--font-display` / `--font-body` are provided by next/font on <html>. */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-bg: var(--bg);
+  --color-bg-elev: var(--bg-elev);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-muted: var(--muted);
+  --color-muted-2: var(--muted-2);
+  --color-line: var(--line);
+  --color-line-2: var(--line-2);
+  --color-yellow: var(--yellow);
+  --color-yellow-soft: var(--yellow-soft);
+  --color-yellow-ink: var(--yellow-ink);
+  --color-sidebar-muted: var(--sidebar-muted);
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body), Inter, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Scrollable region with no visible scrollbar (used by the sidebar). */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Overlay / dialog entrance animations (modals, confirm dialogs, dropdowns). */
+@keyframes overlay-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.animate-overlay-in {
+  animation: overlay-in 0.15s ease-out;
+}
+.animate-dialog-in {
+  animation: dialog-in 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-overlay-in,
+  .animate-dialog-in {
+    animation: none;
+  }
 }
