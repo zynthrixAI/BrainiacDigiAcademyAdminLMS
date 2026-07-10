@@ -1,31 +1,103 @@
-import type { SubscriptionsData } from '@/types/subscription';
+import { api } from '@/lib/axios';
+import type { PaginatedResponse } from '@/types/pagination';
+import type {
+  AdminSubscription,
+  AdminTransaction,
+  GrantSubscriptionRequest,
+  PlanCreateRequest,
+  PlansQuery,
+  PlanUpdateRequest,
+  SubscriptionPlan,
+  SubscriptionsQuery,
+  TransactionsQuery,
+} from '@/types/subscription';
 
 /**
- * Subscriptions snapshot for the billing screen. Returns mock data shaped
- * exactly as the UI consumes it — swap the body for
- * `api.get('/admins/subscriptions')` once the backend endpoint exists; the
- * signature and return type stay the same. Status filtering happens
- * client-side against `items`; `counts` carries the full-set facet totals.
+ * Subscriptions & payments admin API (/admins/subscriptions). Lists are
+ * visible to any admin; plan writes, grant, and activate are superadmin-only
+ * (the backend 403s plain admins).
  */
-export const getSubscriptions = async (): Promise<SubscriptionsData> => {
-  return {
-    summary: '342 active · MRR Rs. 515k · ARR projection Rs. 6.18M',
-    kpis: [
-      { label: 'MRR', value: 'Rs. 515k', note: '+6.8% MoM', tone: 'green' },
-      { label: 'Avg revenue / user', value: 'Rs. 1,506', note: 'blended A & O', tone: 'ink' },
-      { label: 'Renewal rate (30d)', value: '91%', note: '▲ 3% vs last month', tone: 'green' },
-      { label: 'Failed payments', value: '5', note: 'needs attention', tone: 'red' },
-    ],
-    counts: { all: 356, active: 312, trial: 12, grace: 4, cancelled: 28 },
-    items: [
-      { id: 'su1', student: 'Aaliya Hassan', level: 'A Level', plan: 'Annual', started: 'Sep 2024', paid: 38000, status: 'active', next: '15 Aug 2026', paypro: 'PP-3F8K2L' },
-      { id: 'su2', student: 'Hassan Ali', level: 'A Level', plan: 'Monthly', started: 'Oct 2024', paid: 36000, status: 'active', next: '1 Jun 2026', paypro: 'PP-9X2L7M' },
-      { id: 'su3', student: 'Maryam Khan', level: 'A Level', plan: 'Instalment 1/3', started: 'May 2026', paid: 13500, status: 'active', next: 'Aug 2026 — Inst 2', paypro: 'PP-2K8H9P' },
-      { id: 'su4', student: 'Talha Sheikh', level: 'O Level', plan: 'Monthly', started: 'Aug 2024', paid: 28000, status: 'grace', next: 'Grace ends 20 May', paypro: 'PP-4M2N1Q' },
-      { id: 'su5', student: 'Areej Malik', level: 'A Level', plan: 'Trial', started: 'May 2026', paid: 0, status: 'trial', next: 'Trial ends 24 May', paypro: '—' },
-      { id: 'su6', student: 'Daniyal Rauf', level: 'O Level', plan: 'Annual', started: 'Aug 2024', paid: 24000, status: 'active', next: '5 Aug 2026', paypro: 'PP-7B3C5D' },
-      { id: 'su7', student: 'Zara Ahmed', level: 'A Level', plan: 'Annual', started: 'Sep 2024', paid: 38000, status: 'active', next: '10 Sep 2026', paypro: 'PP-8E4F2G' },
-      { id: 'su8', student: 'Usman Tariq', level: 'O Level', plan: 'Monthly', started: 'Jan 2025', paid: 10500, status: 'cancelled', next: 'Cancelled 2 Apr', paypro: 'PP-1A9Z3X' },
-    ],
-  };
+
+/* ---------------------------------- Plans --------------------------------- */
+
+/** List plans, paginated + filterable by name search / status. */
+export const getPlans = async (
+  query: PlansQuery = {},
+): Promise<PaginatedResponse<SubscriptionPlan>> => {
+  const { data } = await api.get<PaginatedResponse<SubscriptionPlan>>(
+    '/admins/subscriptions/plans/',
+    { params: query },
+  );
+  return data;
+};
+
+/** Create a plan — always created as a draft. Price must be > 0 (whole PKR). */
+export const createPlan = async (body: PlanCreateRequest): Promise<SubscriptionPlan> => {
+  const { data } = await api.post<SubscriptionPlan>('/admins/subscriptions/plans/', body);
+  return data;
+};
+
+/** Update a plan (any subset of fields). Works on drafts and published plans. */
+export const updatePlan = async (
+  id: string,
+  body: PlanUpdateRequest,
+): Promise<SubscriptionPlan> => {
+  const { data } = await api.patch<SubscriptionPlan>(`/admins/subscriptions/plans/${id}`, body);
+  return data;
+};
+
+/** Publish a plan — one-way, no unpublish. 400 if already published. */
+export const publishPlan = async (id: string): Promise<SubscriptionPlan> => {
+  const { data } = await api.post<SubscriptionPlan>(`/admins/subscriptions/plans/${id}/publish`);
+  return data;
+};
+
+/** Delete a plan — drafts only. 400 for published plans. */
+export const deletePlan = async (id: string): Promise<{ message: string }> => {
+  const { data } = await api.delete<{ message: string }>(`/admins/subscriptions/plans/${id}`);
+  return data;
+};
+
+/* ------------------------------ Subscriptions ----------------------------- */
+
+/** List student subscriptions, paginated + filterable by status / search. */
+export const getSubscriptions = async (
+  query: SubscriptionsQuery = {},
+): Promise<PaginatedResponse<AdminSubscription>> => {
+  const { data } = await api.get<PaginatedResponse<AdminSubscription>>(
+    '/admins/subscriptions/',
+    { params: query },
+  );
+  return data;
+};
+
+/** Activate a pending/expired subscription — restarts the full interval from
+ *  now and emails the student. 400 if already active, 409 if the user has a
+ *  different active subscription. */
+export const activateSubscription = async (id: string): Promise<AdminSubscription> => {
+  const { data } = await api.post<AdminSubscription>(`/admins/subscriptions/${id}/activate`);
+  return data;
+};
+
+/** Grant a free, immediately-active subscription (published plans only).
+ *  404 user/plan not found, 400 plan not published, 409 already subscribed. */
+export const grantSubscription = async (
+  body: GrantSubscriptionRequest,
+): Promise<AdminSubscription> => {
+  const { data } = await api.post<AdminSubscription>('/admins/subscriptions/grant', body);
+  return data;
+};
+
+/* ------------------------------- Transactions ----------------------------- */
+
+/** List payment transactions, paginated + filterable by status / purpose /
+ *  search (name, email, basket ID, PayFast transaction ID, or item name). */
+export const getTransactions = async (
+  query: TransactionsQuery = {},
+): Promise<PaginatedResponse<AdminTransaction>> => {
+  const { data } = await api.get<PaginatedResponse<AdminTransaction>>(
+    '/admins/subscriptions/transactions/',
+    { params: query },
+  );
+  return data;
 };

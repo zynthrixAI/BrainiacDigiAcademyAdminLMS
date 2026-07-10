@@ -35,6 +35,14 @@ export const formatDuration = (seconds: number): string => {
 export const formatPrice = (price: number): string =>
   price > 0 ? `PKR ${price.toLocaleString('en-US')}` : 'Free';
 
+/** Whole-PKR amount, e.g. "Rs. 1,500". */
+export const formatPkr = (amount: number): string =>
+  `Rs. ${Math.round(amount).toLocaleString('en-US')}`;
+
+/** Billing-interval label: monthly/quarterly/yearly → 1 Month / 3 Months / 1 Year. */
+export const intervalLabel = (interval: 'monthly' | 'quarterly' | 'yearly'): string =>
+  ({ monthly: '1 Month', quarterly: '3 Months', yearly: '1 Year' })[interval];
+
 /** Format an ISO date as e.g. "5 Sep 2024". Returns "—" when invalid. */
 export const formatDate = (iso: string): string => {
   const date = new Date(iso);
