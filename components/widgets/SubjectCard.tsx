@@ -16,6 +16,7 @@ interface SubjectCardProps {
 }
 
 export function SubjectCard({ subject, deleting, onEdit, onDelete }: SubjectCardProps) {
+  const robinPapers = subject.robin_papers ?? [];
   return (
     <div className="group flex flex-col overflow-hidden rounded-[var(--radius)] border border-line bg-bg-elev shadow-[0_1px_0_rgba(28,27,27,0.02),0_1px_2px_rgba(28,27,27,0.03)] transition-shadow hover:shadow-[0_4px_16px_rgba(28,27,27,0.08)]">
       <div className="relative aspect-[16/9] w-full overflow-hidden bg-[#f0eeea]">
@@ -48,6 +49,21 @@ export function SubjectCard({ subject, deleting, onEdit, onDelete }: SubjectCard
         <p className="mt-1 line-clamp-2 min-h-[34px] text-[12.5px] text-muted">
           {subject.description || 'No description.'}
         </p>
+
+        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          <span className="font-display text-[10.5px] font-bold uppercase tracking-wide text-muted-2">
+            Robin
+          </span>
+          {robinPapers.length > 0 ? (
+            robinPapers.map((p) => (
+              <Pill key={p} className="bg-[#fff7dd] text-ink">
+                P{p}
+              </Pill>
+            ))
+          ) : (
+            <span className="text-[11.5px] text-muted-2">All papers</span>
+          )}
+        </div>
 
         <div className="mt-4 flex items-center gap-2 border-t border-line pt-3">
           <Link
