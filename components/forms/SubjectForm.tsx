@@ -23,6 +23,9 @@ const LEVELS = [
   { label: 'A Level', value: 'A' },
 ];
 
+/** Exam papers Robin AI can be scoped to answer for a subject. */
+const ROBIN_PAPERS = ['1', '2', '3', '4', '5', '6'];
+
 export function SubjectForm({ subject, onSaved, onCancel }: SubjectFormProps) {
   const isEdit = Boolean(subject);
   const { data: teacherData } = useTeachers({ page: 1, limit: 100 });
@@ -33,8 +36,12 @@ export function SubjectForm({ subject, onSaved, onCancel }: SubjectFormProps) {
   const [description, setDescription] = useState(subject?.description ?? '');
   const [teacherId, setTeacherId] = useState(subject?.teacher_id ?? '');
   const [isPublished, setIsPublished] = useState(subject?.is_published ?? false);
+  const [robinPapers, setRobinPapers] = useState<string[]>(subject?.robin_papers ?? []);
   const [thumbFile, setThumbFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(subject?.thumbnail_url ?? null);
+
+  const togglePaper = (p: string) =>
+    setRobinPapers((prev) => (prev.includes(p) ? prev.filter((x) => x !== p) : [...prev, p]));
 
   const teacherOptions = [
     { label: '— Unassigned', value: '' },
@@ -60,6 +67,7 @@ export function SubjectForm({ subject, onSaved, onCancel }: SubjectFormProps) {
       teacher_id: teacherId || null,
       thumbnail: thumbFile,
       is_published: isPublished,
+      robin_papers: [...robinPapers].sort(),
     };
     if (isEdit && subject) {
       update.mutate({ id: subject.id, body: shared }, { onSuccess: onSaved });
@@ -140,6 +148,35 @@ export function SubjectForm({ subject, onSaved, onCancel }: SubjectFormProps) {
         onChange={setIsPublished}
         label="Published — visible to students"
       />
+
+      <div className="flex flex-col gap-2">
+        <span className="font-display text-[12.5px] font-bold text-ink-2">
+          Robin AI · Papers answered
+        </span>
+        <div className="flex flex-wrap gap-2">
+          {ROBIN_PAPERS.map((p) => {
+            const active = robinPapers.includes(p);
+            return (
+              <button
+                key={p}
+                type="button"
+                onClick={() => togglePaper(p)}
+                aria-pressed={active}
+                className={`rounded-xl border px-3.5 py-2 text-[12.5px] font-semibold transition-colors ${
+                  active
+                    ? 'border-yellow bg-[#fff7dd] text-ink'
+                    : 'border-line bg-white text-muted hover:border-ink hover:text-ink'
+                }`}
+              >
+                Paper {p}
+              </button>
+            );
+          })}
+        </div>
+        <span className="text-[11.5px] text-muted-2">
+          Which past-paper sets Robin retrieves from for this subject. None selected = no paper restriction.
+        </span>
+      </div>
 
       {errorText && <p className="text-[13px] font-medium text-[var(--red)]">{errorText}</p>}
 

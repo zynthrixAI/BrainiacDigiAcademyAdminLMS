@@ -26,6 +26,9 @@ const toSubjectForm = (
   if (body.thumbnail) form.append('thumbnail', body.thumbnail);
   else if (body.thumbnail_url) form.append('thumbnail_url', body.thumbnail_url);
   if (body.is_published !== undefined) form.append('is_published', String(body.is_published));
+  // Robin AI papers — sent as a comma-separated list the backend parses.
+  // An explicit empty string clears the list on PATCH.
+  if (body.robin_papers !== undefined) form.append('robin_papers', body.robin_papers.join(','));
   return form;
 };
 

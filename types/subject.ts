@@ -14,6 +14,8 @@ export interface Subject {
   description: string;
   thumbnail_url: string | null;
   is_published: boolean;
+  /** Exam papers ("1".."6") Robin AI answers for this subject. Empty = no restriction. */
+  robin_papers: string[];
   created_at: string;
   updated_at: string;
 }
@@ -28,6 +30,7 @@ export interface SubjectCreateRequest {
   thumbnail?: File | null;
   thumbnail_url?: string | null;
   is_published?: boolean;
+  robin_papers?: string[];
 }
 
 /** Multipart PATCH body — all fields optional; only sent fields change. */
@@ -39,6 +42,7 @@ export interface SubjectUpdateRequest {
   thumbnail?: File | null;
   thumbnail_url?: string | null;
   is_published?: boolean;
+  robin_papers?: string[];
 }
 
 export interface SubjectsQuery {
